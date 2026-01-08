@@ -12,11 +12,10 @@ use Exception;
 
 class ClassmapReplacer extends BaseReplacer
 {
-    /** @var string[] */
-    public $replacedClasses = [];
+    /** @var array<string,string> */
+    public array $replacedClasses = [];
 
-    /** @var string */
-    public $classmapPrefix;
+    public string $classmapPrefix;
 
     public function replace(string $contents): string
     {
