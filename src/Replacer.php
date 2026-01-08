@@ -14,14 +14,12 @@ use Exception;
 
 class Replacer
 {
-    /** @var Mozart */
-    protected $config;
+    protected Mozart $config;
 
     /** @var array<string,string> */
-    protected $replacedClasses = [];
+    protected array $replacedClasses = [];
 
-    /** @var FilesHandler */
-    protected $files;
+    protected FilesHandler $files;
 
     public function __construct(Mozart $config)
     {

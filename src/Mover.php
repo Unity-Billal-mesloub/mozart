@@ -16,10 +16,10 @@ class Mover
     protected FilesHandler $files;
 
     /** @var array<string> */
-    protected $movedPackages = [];
+    protected array $movedPackages = [];
 
     /** @var array<string> */
-    protected $movedFiles = [];
+    protected array $movedFiles = [];
 
     public function __construct(Mozart $config)
     {
