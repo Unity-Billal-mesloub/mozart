@@ -15,7 +15,7 @@ abstract class NamespaceAutoloader extends AbstractAutoloader
      *
      * @var string[]
      */
-    public $paths = [];
+    public array $paths = [];
 
     private FilesHandler $fileHandler;
 

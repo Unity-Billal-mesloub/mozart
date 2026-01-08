@@ -10,10 +10,10 @@ use Symfony\Component\Finder\SplFileInfo;
 class Classmap extends AbstractAutoloader
 {
     /** @var string[] */
-    public $files = [];
+    public array $files = [];
 
     /** @var string[] */
-    public $paths = [];
+    public array $paths = [];
 
     private FilesHandler $fileHandler;
 

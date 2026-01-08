@@ -15,7 +15,7 @@ class Package
     use ReadsConfig;
 
     /** @var Package[] */
-    public $dependencies = [];
+    public array $dependencies = [];
 
     public string $name;
 
