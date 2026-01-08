@@ -13,7 +13,7 @@ class ExceptionTest extends TestCase
     public function mozart_exception_is_throwable(): void
     {
         $exception = new MozartException('Test message');
-        
+
         $this->assertInstanceOf(\Exception::class, $exception);
         $this->assertEquals('Test message', $exception->getMessage());
     }
@@ -22,7 +22,7 @@ class ExceptionTest extends TestCase
     public function configuration_exception_extends_mozart_exception(): void
     {
         $exception = new ConfigurationException('Config error');
-        
+
         $this->assertInstanceOf(MozartException::class, $exception);
         $this->assertEquals('Config error', $exception->getMessage());
     }
@@ -31,7 +31,7 @@ class ExceptionTest extends TestCase
     public function file_operation_exception_extends_mozart_exception(): void
     {
         $exception = new FileOperationException('File error');
-        
+
         $this->assertInstanceOf(MozartException::class, $exception);
         $this->assertEquals('File error', $exception->getMessage());
     }
@@ -41,7 +41,7 @@ class ExceptionTest extends TestCase
     {
         $previous = new \RuntimeException('Previous error');
         $exception = new FileOperationException('File error', 0, $previous);
-        
+
         $this->assertSame($previous, $exception->getPrevious());
     }
 }
