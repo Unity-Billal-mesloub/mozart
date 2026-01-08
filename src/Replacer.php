@@ -48,9 +48,15 @@ class Replacer
     public function replaceInFile(string $targetFile, Autoloader $autoloader): void
     {
         $targetFile = str_replace($this->config->getWorkingDir(), '', $targetFile);
-        $contents = $this->files->readFile($targetFile);
 
-        if (!$contents) {
+        try {
+            $contents = $this->files->readFile($targetFile);
+        } catch (\CoenJacobs\Mozart\Exceptions\FileOperationException $e) {
+            // Skip files that cannot be read
+            return;
+        }
+
+        if (empty($contents)) {
             return;
         }
 
@@ -127,7 +133,12 @@ class Replacer
             $targetFile = $file->getPathName();
 
             if ('.php' == substr($targetFile, -4, 4)) {
-                $contents = $this->files->readFile($targetFile);
+                try {
+                    $contents = $this->files->readFile($targetFile);
+                } catch (\CoenJacobs\Mozart\Exceptions\FileOperationException $e) {
+                    // Skip files that cannot be read
+                    continue;
+                }
 
                 foreach ($replacedClasses as $original => $replacement) {
                     $contents = preg_replace_callback(

@@ -3,6 +3,7 @@
 namespace CoenJacobs\Mozart;
 
 use CoenJacobs\Mozart\Config\Mozart;
+use CoenJacobs\Mozart\Exceptions\FileOperationException;
 use Iterator;
 use League\Flysystem\Local\LocalFilesystemAdapter;
 use League\Flysystem\UnableToReadFile;
@@ -29,12 +30,10 @@ class FilesHandler
     public function readFile(string $path): string
     {
         try {
-            $contents = $this->filesystem->read($path);
+            return $this->filesystem->read($path);
         } catch (UnableToReadFile $e) {
-            $contents = '';
+            throw new FileOperationException("Failed to read file: {$path}. " . $e->getMessage(), 0, $e);
         }
-
-        return $contents;
     }
 
     public function getConfig(): Mozart
