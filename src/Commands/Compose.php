@@ -27,12 +27,8 @@ class Compose
     {
         $composerFile = $this->workingDir . DIRECTORY_SEPARATOR . 'composer.json';
 
-        try {
-            $factory = new PackageFactory();
-            $package = $factory->createPackage($composerFile);
-        } catch (Exception $e) {
-            throw $e;
-        }
+        $factory = new PackageFactory();
+        $package = $factory->createPackage($composerFile);
 
         if (! $package->isValidMozartConfig() || empty($package->getExtra())) {
             throw new Exception('Mozart config not readable in composer.json at extra->mozart');
@@ -45,11 +41,6 @@ class Compose
         }
 
         $config->setWorkingDir($this->workingDir);
-
-        $require = $config->getPackages();
-        if (empty($require)) {
-            $require = $package->getRequire();
-        }
 
         $finder = new PackageFinder();
         $finder->setConfig($config);
