@@ -4,21 +4,16 @@ namespace CoenJacobs\Mozart;
 
 use CoenJacobs\Mozart\Config\Mozart;
 use CoenJacobs\Mozart\Config\Package;
-use Exception;
+use CoenJacobs\Mozart\Exceptions\ConfigurationException;
 
 class PackageFinder
 {
     private ?Mozart $config;
+    public PackageFactory $factory;
 
-    public static function instance(): self
+    public function __construct()
     {
-        static $instance;
-
-        if (! is_object($instance) || ! $instance instanceof self) {
-            $instance = new self();
-        }
-
-        return $instance;
+        $this->factory = new PackageFactory();
     }
 
     public function setConfig(Mozart $config): void
@@ -26,6 +21,12 @@ class PackageFinder
         $this->config = $config;
     }
 
+    /**
+     * Returns a Package object for the package based on the provided slug (in
+     * vendor/package format). The data of the package is loaded if a valid
+     * installed package could be found based on the slug, which is then being
+     * used to read the composer.json file of the package.
+     */
     public function getPackageBySlug(string $slug): ?Package
     {
         /**
@@ -37,26 +38,31 @@ class PackageFinder
         }
 
         if (empty($this->config)) {
-            throw new Exception("Config not set to find packages");
+            throw new ConfigurationException("Config not set to find packages");
         }
 
         $packageDir = $this->config->getWorkingDir() . DIRECTORY_SEPARATOR . 'vendor'
                           . DIRECTORY_SEPARATOR . $slug . DIRECTORY_SEPARATOR;
 
         if (! is_dir($packageDir)) {
-            throw new Exception("Couldn't load package based on provided slug: " . $slug);
+            throw new ConfigurationException("Couldn't load package based on provided slug: " . $slug);
         }
 
         $autoloaders = null;
-        $override_autoload = $this->config->getOverrideAutoload();
-        if ($override_autoload !== false && isset($override_autoload->$slug)) {
-            $autoloaders = $override_autoload->$slug;
+        $overrideAutoload = $this->config->getOverrideAutoload();
+        if ($overrideAutoload !== false && isset($overrideAutoload->$slug)) {
+            $autoloaders = $overrideAutoload->$slug;
         }
 
-        return PackageFactory::createPackage($packageDir . 'composer.json', $autoloaders, true);
+        $package = $this->factory->createPackage($packageDir . 'composer.json', $autoloaders);
+        $package->loadDependencies($this);
+        return $package;
     }
 
     /**
+     * Returns Package objects which are loaded based on the provided array of
+     * slugs (in vendor/package format).
+     *
      * @param string[] $slugs
      * @return Package[]
      */
@@ -72,11 +78,10 @@ class PackageFinder
     }
 
     /**
-     * Loops through all dependencies and their dependencies and so on...
-     * will eventually return a list of all packages required by the full tree.
+     * Loops through all dependencies and their dependencies and so on... will
+     * eventually return a list of all packages required by the full tree.
      *
      * @param Package[] $packages
-     *
      * @return Package[]
      */
     public function findPackages(array $packages): array
@@ -84,8 +89,9 @@ class PackageFinder
         foreach ($packages as $package) {
             $dependencies = $package->getDependencies();
 
-            $package->registerDependencies($this->findPackages($dependencies));
-            $packages[$package->getName()] = $package;
+            if (! empty($dependencies)) {
+                $packages = array_merge($packages, $this->findPackages($dependencies));
+            }
         }
 
         return $packages;

@@ -1,30 +1,29 @@
 <?php
+
 /**
- * The purpose of this file is to find and update classnames (and interfaces...) in their declarations.
- * Those replaced are recorded and their uses elsewhere are updated in a later step.
+ * The purpose of this file is to find and update classnames (and interfaces...)
+ * in their declarations. Those replaced are recorded and their uses elsewhere
+ * are updated in a later step.
  */
 
 namespace CoenJacobs\Mozart\Replace;
 
+use CoenJacobs\Mozart\Exceptions\FileOperationException;
+
 class ClassmapReplacer extends BaseReplacer
 {
+    /** @var array<string,string> */
+    public array $replacedClasses = [];
 
-    /** @var string[] */
-    public $replacedClasses = [];
+    public string $classmapPrefix;
 
-    /** @var string */
-    public $classmap_prefix;
-
-    /**
-     * @param false|string $contents
-     */
-    public function replace($contents): string
+    public function replace(string $contents): string
     {
-        if (empty($contents) || false === $contents) {
+        if (empty($contents)) {
             return '';
         }
 
-        return preg_replace_callback(
+        $replaced = preg_replace_callback(
             "
 			/													# Start the pattern
 						namespace\s+[a-zA-Z0-9_\x7f-\xff\\\\]+[;{\s\n]{1}.*?(?=namespace|$)
@@ -39,7 +38,7 @@ class ClassmapReplacer extends BaseReplacer
 						(?:{|extends|implements|\n)				# Class declaration can be followed by {, extends,
 																# implements, or a new line
 			/sx", //                                            # dot matches newline, ignore whitespace in regex.
-            function ($matches) use ($contents) {
+            function ($matches) {
 
                 // If we're inside a namespace other than the global namesspace, just return.
                 if (preg_match('/^namespace\s+[a-zA-Z0-9_\x7f-\xff\\\\]+[;{\s\n]{1}.*/', $matches[0])) {
@@ -47,15 +46,21 @@ class ClassmapReplacer extends BaseReplacer
                 }
 
                 // The prepended class name.
-                $replace = $this->classmap_prefix . $matches[1];
+                $replace = $this->classmapPrefix . $matches[1];
                 $this->saveReplacedClass($matches[1], $replace);
                 return str_replace($matches[1], $replace, $matches[0]);
             },
             $contents
         );
+
+        if (empty($replaced)) {
+            throw new FileOperationException('Failed to replace contents of the file.');
+        }
+
+        return $replaced;
     }
 
-    public function saveReplacedClass($classname, string $replacedName): void
+    public function saveReplacedClass(string $classname, string $replacedName): void
     {
         $this->replacedClasses[ $classname ] = $replacedName;
     }
