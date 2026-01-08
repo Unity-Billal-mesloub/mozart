@@ -8,7 +8,7 @@
 
 namespace CoenJacobs\Mozart\Replace;
 
-use Exception;
+use CoenJacobs\Mozart\Exceptions\FileOperationException;
 
 class ClassmapReplacer extends BaseReplacer
 {
@@ -54,7 +54,7 @@ class ClassmapReplacer extends BaseReplacer
         );
 
         if (empty($replaced)) {
-            throw new Exception('Failed to replace contents of the file.');
+            throw new FileOperationException('Failed to replace contents of the file.');
         }
 
         return $replaced;

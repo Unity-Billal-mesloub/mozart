@@ -2,11 +2,11 @@
 
 namespace CoenJacobs\Mozart\Commands;
 
+use CoenJacobs\Mozart\Exceptions\ConfigurationException;
 use CoenJacobs\Mozart\Mover;
 use CoenJacobs\Mozart\PackageFactory;
 use CoenJacobs\Mozart\PackageFinder;
 use CoenJacobs\Mozart\Replacer;
-use Exception;
 
 class Compose
 {
@@ -31,13 +31,13 @@ class Compose
         $package = $factory->createPackage($composerFile);
 
         if (! $package->isValidMozartConfig() || empty($package->getExtra())) {
-            throw new Exception('Mozart config not readable in composer.json at extra->mozart');
+            throw new ConfigurationException('Mozart config not readable in composer.json at extra->mozart');
         }
 
         $config = $package->getExtra()->getMozart();
 
         if (empty($config)) {
-            throw new Exception('Mozart config not readable in composer.json at extra->mozart');
+            throw new ConfigurationException('Mozart config not readable in composer.json at extra->mozart');
         }
 
         $config->setWorkingDir($this->workingDir);

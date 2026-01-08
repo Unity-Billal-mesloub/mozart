@@ -2,7 +2,7 @@
 
 namespace CoenJacobs\Mozart\Replace;
 
-use Exception;
+use CoenJacobs\Mozart\Exceptions\FileOperationException;
 
 class NamespaceReplacer extends BaseReplacer
 {
@@ -35,7 +35,7 @@ class NamespaceReplacer extends BaseReplacer
         );
 
         if (empty($replaced)) {
-            throw new Exception('Failed to replace contents of the file.');
+            throw new FileOperationException('Failed to replace contents of the file.');
         }
 
         return $replaced;

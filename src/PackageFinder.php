@@ -4,7 +4,7 @@ namespace CoenJacobs\Mozart;
 
 use CoenJacobs\Mozart\Config\Mozart;
 use CoenJacobs\Mozart\Config\Package;
-use Exception;
+use CoenJacobs\Mozart\Exceptions\ConfigurationException;
 
 class PackageFinder
 {
@@ -38,14 +38,14 @@ class PackageFinder
         }
 
         if (empty($this->config)) {
-            throw new Exception("Config not set to find packages");
+            throw new ConfigurationException("Config not set to find packages");
         }
 
         $packageDir = $this->config->getWorkingDir() . DIRECTORY_SEPARATOR . 'vendor'
                           . DIRECTORY_SEPARATOR . $slug . DIRECTORY_SEPARATOR;
 
         if (! is_dir($packageDir)) {
-            throw new Exception("Couldn't load package based on provided slug: " . $slug);
+            throw new ConfigurationException("Couldn't load package based on provided slug: " . $slug);
         }
 
         $autoloaders = null;
