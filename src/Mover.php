@@ -117,10 +117,6 @@ class Mover
             return;
         }
 
-        /**
-         * @todo: This maybe even warrants its own 'File' class, where stuff
-         * like the SplFileInfo etc can be stored in.
-         */
         foreach ($package->getAutoloaders() as $autoloader) {
             $filesToMove = $autoloader->getFiles($this->files);
 
