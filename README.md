@@ -10,7 +10,7 @@ Mozart brings its own dependencies to the table and that potentially introduces 
 
 ### Docker
 
-Mozart provides Docker images for multiple architectures (linux/amd64 and linux/arm64), making it compatible with Intel/AMD systems, Apple Silicon Macs, and ARM-based servers.
+Mozart provides Docker images for multiple architectures (linux/amd64, linux/arm64, and linux/arm/v7), making it compatible with Intel/AMD systems, Apple Silicon Macs, ARM-based servers, and Raspberry Pi devices (including Raspberry Pi 3 and earlier).
 
 #### Image Registries
 
