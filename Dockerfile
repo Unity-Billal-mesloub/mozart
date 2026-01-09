@@ -19,6 +19,15 @@ RUN rm -rf vendor
 RUN composer install --no-dev -o
 
 FROM base AS application
+# Add metadata labels
+ARG VERSION
+ARG BUILD_DATE
+ARG VCS_REF
+ARG SOURCE_URL
+LABEL org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.source="${SOURCE_URL}"
 RUN mkdir project
 WORKDIR /project/
 COPY --from=packager /mozart/ /mozart/

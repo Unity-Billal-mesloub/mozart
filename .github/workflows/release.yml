@@ -99,6 +99,11 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.prep.outputs.tags }}
+          build-args: |
+            VERSION=${{ github.event.release.tag_name }}
+            BUILD_DATE=${{ github.event.release.published_at }}
+            VCS_REF=${{ github.sha }}
+            SOURCE_URL=${{ github.event.repository.html_url }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
