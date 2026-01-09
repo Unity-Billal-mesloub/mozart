@@ -50,7 +50,7 @@ jobs:
           context: .
           file: ./Dockerfile
           target: application
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
           build-args: |
             VERSION=dev
             BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
