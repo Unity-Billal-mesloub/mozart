@@ -27,7 +27,11 @@ ARG SOURCE_URL
 LABEL org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.source="${SOURCE_URL}"
+      org.opencontainers.image.source="${SOURCE_URL}" \
+      org.opencontainers.image.title="Mozart" \
+      org.opencontainers.image.description="Composes all dependencies as a package inside a WordPress plugin" \
+      org.opencontainers.image.documentation="${SOURCE_URL}/blob/master/README.md" \
+      org.opencontainers.image.licenses="MIT"
 RUN mkdir project
 WORKDIR /project/
 COPY --from=packager /mozart/ /mozart/
