@@ -22,12 +22,23 @@ jobs:
       - name: Create .phar
         run: |
           wget -O phar-composer.phar https://github.com/clue/phar-composer/releases/download/v1.2.0/phar-composer-1.2.0.phar
+          chmod +x phar-composer.phar
           mkdir build
           mv vendor build/vendor
           mv src build/src
           mv bin build/bin
           mv composer.json build
           php -d phar.readonly=off phar-composer.phar build ./build/
+          
+          # Verify phar was created
+          if [ ! -f "mozart.phar" ]; then
+            echo "Error: mozart.phar was not created"
+            ls -la
+            exit 1
+          fi
+          
+          echo "✓ PHAR file created successfully"
+          ls -lh mozart.phar
 
       - name: Test run mozart
         run: php mozart.phar --version
