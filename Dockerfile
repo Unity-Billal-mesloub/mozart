@@ -5,7 +5,7 @@ FROM base AS builder
 RUN apk update && apk add git
 RUN apk add --update linux-headers
 RUN apk add --no-cache $PHPIZE_DEPS \
-    && pecl install xdebug-3.3.2 \
+    && pecl install xdebug-3.5.0 \
     && docker-php-ext-enable xdebug
 COPY ./docker/php/xdebug.ini /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 COPY ./docker/php/error_reporting.ini /usr/local/etc/php/conf.d/error_reporting.ini
