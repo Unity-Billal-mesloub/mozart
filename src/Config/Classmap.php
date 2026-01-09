@@ -81,7 +81,7 @@ class Classmap extends AbstractAutoloader
     {
         $suffix = '';
         foreach ($this->paths as $path) {
-            if (! empty(strstr($file->getPathname(), $this->getPackage()->getName() . DIRECTORY_SEPARATOR . $path))) {
+            if (str_contains($file->getPathname(), $this->getPackage()->getName() . DIRECTORY_SEPARATOR . $path)) {
                 $suffix = $path;
                 break;
             }

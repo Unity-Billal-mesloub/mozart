@@ -10,7 +10,7 @@ class PackageFactory
     /** @var array <string,Package> */
     public array $cache = [];
 
-    public function createPackage(string $path, stdClass $overrideAutoload = null): Package
+    public function createPackage(string $path, ?stdClass $overrideAutoload = null): Package
     {
         if (isset($this->cache[$path])) {
             return $this->cache[$path];
