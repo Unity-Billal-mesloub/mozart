@@ -29,7 +29,7 @@ jobs:
           mv src build/src
           mv bin build/bin
           mv composer.json build
-          
+
           # Build PHAR with error output
           echo "Building PHAR file..."
           php -d phar.readonly=off phar-composer.phar build ./build/ 2>&1 || {
@@ -39,7 +39,7 @@ jobs:
             cat build/composer.json || echo "composer.json not found in build/"
             exit 1
           }
-          
+
           # Verify phar was created
           if [ ! -f "mozart.phar" ]; then
             echo "Error: mozart.phar was not created"
@@ -47,7 +47,7 @@ jobs:
             ls -la
             exit 1
           fi
-          
+
           echo "✓ PHAR file created successfully"
           ls -lh mozart.phar
 
@@ -217,3 +217,65 @@ jobs:
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
+
+      - name: Update release notes with Docker images
+        if: success()
+        run: |
+          VERSION="${{ github.event.release.tag_name }}"
+          DOCKER_IMAGE=coenjacobs/mozart
+          GHCR_IMAGE=ghcr.io/${{ github.repository_owner }}/mozart
+
+          # Build Docker image information
+          DOCKER_INFO="## Docker Images
+
+          This release includes Docker images for multiple architectures (linux/amd64, linux/arm64, linux/arm/v7).
+
+          ### Pull from Docker Hub
+          \`\`\`bash
+          docker pull ${DOCKER_IMAGE}:${VERSION}
+          \`\`\`
+
+          ### Pull from GitHub Container Registry
+          \`\`\`bash
+          docker pull ${GHCR_IMAGE}:${VERSION}
+          \`\`\`
+
+          ### Available Tags
+          - \`${VERSION}\` - This release
+          "
+
+          # For stable releases, add latest tag info
+          if [ "${{ steps.prep.outputs.is_prerelease }}" = "false" ]; then
+            DOCKER_INFO="${DOCKER_INFO}
+          - \`latest\` - Latest stable version (if this is the highest version)
+          "
+          fi
+
+          DOCKER_INFO="${DOCKER_INFO}
+          ### Links
+          - [Docker Hub](https://hub.docker.com/r/${DOCKER_IMAGE}/tags)
+          - [GitHub Container Registry](https://github.com/${{ github.repository }}/pkgs/container/mozart)
+          "
+
+          # Get current release body
+          CURRENT_BODY=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/${{ github.event.release.id }}" | \
+            jq -r '.body // ""')
+
+          # Append Docker info to release body (avoid duplicates)
+          if [[ "$CURRENT_BODY" != *"## Docker Images"* ]]; then
+            NEW_BODY="${CURRENT_BODY}
+
+          ${DOCKER_INFO}"
+
+            # Update release
+            curl -X PATCH \
+              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              "https://api.github.com/repos/${{ github.repository }}/releases/${{ github.event.release.id }}" \
+              -d "{\"body\": $(echo "$NEW_BODY" | jq -Rs .)}"
+
+            echo "✓ Release notes updated with Docker image information"
+          else
+            echo "✓ Docker image information already present in release notes"
+          fi
