@@ -8,6 +8,13 @@ use stdClass;
 
 trait ReadsConfig
 {
+    /**
+     * Load configuration from a file.
+     *
+     * @param string $filePath Path to the configuration file
+     * @return self
+     * @throws Exception If the file cannot be read
+     */
     public function loadFromFile(string $filePath): self
     {
         if (! file_exists($filePath) || ! is_readable($filePath)) {
