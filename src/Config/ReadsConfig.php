@@ -10,7 +10,11 @@ trait ReadsConfig
 {
     public function loadFromFile(string $filePath): self
     {
-        $fileContents = @file_get_contents($filePath);
+        if (! file_exists($filePath) || ! is_readable($filePath)) {
+            throw new Exception('Could not read config from provided file.');
+        }
+
+        $fileContents = file_get_contents($filePath);
 
         if (! $fileContents) {
             throw new Exception('Could not read config from provided file.');
