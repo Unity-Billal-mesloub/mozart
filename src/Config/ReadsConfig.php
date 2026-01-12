@@ -10,7 +10,7 @@ trait ReadsConfig
 {
     public function loadFromFile(string $filePath): self
     {
-        $fileContents = file_get_contents($filePath);
+        $fileContents = @file_get_contents($filePath);
 
         if (! $fileContents) {
             throw new Exception('Could not read config from provided file.');
@@ -55,6 +55,10 @@ trait ReadsConfig
     public function loadFromString(string $config): self
     {
         $config = json_decode($config);
+
+        if ($config === null) {
+            throw new Exception('Could not read config from provided array.');
+        }
 
         $mapper = new JsonMapper();
         $mapper->bEnforceMapType = false;
