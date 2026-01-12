@@ -64,7 +64,7 @@ abstract class NamespaceAutoloader extends AbstractAutoloader
 
         foreach ($this->paths as $path) {
             $sourcePath = $fileHandler->getConfig()->getWorkingDir() . 'vendor' . DIRECTORY_SEPARATOR
-                        . $this->getPackage()->getName() . DIRECTORY_SEPARATOR . $path;
+                        . $this->getPackage()->getDirectoryName() . DIRECTORY_SEPARATOR . $path;
 
             $sourcePath = str_replace('/', DIRECTORY_SEPARATOR, $sourcePath);
 
@@ -87,7 +87,8 @@ abstract class NamespaceAutoloader extends AbstractAutoloader
     {
         $suffix = '';
         foreach ($this->paths as $path) {
-            if (str_contains($file->getPathname(), $this->getPackage()->getName() . DIRECTORY_SEPARATOR . $path)) {
+            $directoryName = $this->getPackage()->getDirectoryName();
+            if (str_contains($file->getPathname(), $directoryName . DIRECTORY_SEPARATOR . $path)) {
                 $suffix = $path;
                 break;
             }
@@ -96,7 +97,8 @@ abstract class NamespaceAutoloader extends AbstractAutoloader
         $replaceWith = $this->fileHandler->getConfig()->getDepDirectory() . $this->getNamespacePath();
         $targetFile = str_replace($this->fileHandler->getConfig()->getWorkingDir(), $replaceWith, $file->getPathname());
 
-        $packageVendorPath = DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . $this->getPackage()->getName();
+        $directoryName = $this->getPackage()->getDirectoryName();
+        $packageVendorPath = DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . $directoryName;
 
         if (! empty($suffix)) {
             $packageVendorPath = $packageVendorPath . DIRECTORY_SEPARATOR . $suffix;

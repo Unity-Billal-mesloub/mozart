@@ -19,6 +19,8 @@ class Package
 
     public string $name;
 
+    public ?string $directoryName = null;
+
     /** @var string[] */
     public array $require = [];
 
@@ -55,6 +57,11 @@ class Package
     public function getName(): string
     {
         return $this->name;
+    }
+
+    public function getDirectoryName(): string
+    {
+        return $this->directoryName ?? $this->name;
     }
 
     /**

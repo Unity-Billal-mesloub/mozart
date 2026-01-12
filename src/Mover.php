@@ -65,7 +65,7 @@ class Mover
                 case Classmap::class:
                     $outputDir = $autoloader->getOutputDir(
                         $this->config->getClassmapDirectory(),
-                        $package->getName()
+                        $package->getDirectoryName()
                     );
                     break;
             }
@@ -125,14 +125,14 @@ class Mover
             }
         }
 
-        if (!in_array($package->getName(), $this->movedPackages)) {
-            $this->movedPackages[] = $package->getName();
+        if (!in_array($package->getDirectoryName(), $this->movedPackages)) {
+            $this->movedPackages[] = $package->getDirectoryName();
         }
     }
 
     private function shouldPackageBeMoved(Package $package): bool
     {
-        if (in_array($package->getName(), $this->movedPackages)) {
+        if (in_array($package->getDirectoryName(), $this->movedPackages)) {
             return false;
         }
 
