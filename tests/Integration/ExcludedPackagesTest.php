@@ -21,7 +21,7 @@ class ExcludedPackagesTest extends TestCase {
     }
 
     /**
-     * Verifies that the explicitely excluded packages from the Mozart config
+     * Verifies that the explicitly excluded packages from the Mozart config
      * are _not_ being moved to the provided dependency directory and the files
      * will stay present in the vendor directory. At the same time, the other
      * package is being moved to the dependency directory and after that the
@@ -57,7 +57,7 @@ class ExcludedPackagesTest extends TestCase {
     /**
      * Verifies that the excluded package `psr/container` is _not_ having its
      * classes replaced in the implementing `pimple/pimple` package when the
-     * former is explicitely excluded and the latter is added to the list of
+     * former is explicitly excluded and the latter is added to the list of
      * packages for Mozart to rewrite.
      *
      * @test

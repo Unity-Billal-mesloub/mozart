@@ -4,7 +4,7 @@ Composes all dependencies as a package inside a WordPress plugin. Load packages 
 This package requires PHP 8.1 or higher in order to run the tool. You can use the resulting files as a bundle, requiring any PHP version you like, even PHP 5.2.
 
 ## Installation
-Mozart brings its own dependencies to the table and that potentially introduces its own problems (yes, I realise how meta that is, for a package like this). That's why installing Mozart in isolation, either through the Docker container, the available PHAR file or installing Mozart as a global dependency with Composer is prefered. In all cases, the [configuration](#configuration) still needs to be placed in the `composer.json` file of the project iself.
+Mozart brings its own dependencies to the table and that potentially introduces its own problems (yes, I realise how meta that is, for a package like this). That's why installing Mozart in isolation, either through the Docker container, the available PHAR file or installing Mozart as a global dependency with Composer is preferred. In all cases, the [configuration](#configuration) still needs to be placed in the `composer.json` file of the project itself.
 
 ### Docker
 
