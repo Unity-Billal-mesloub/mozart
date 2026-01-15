@@ -116,7 +116,7 @@ class Replacer
     }
 
     /**
-     * Replaces all occurances of previously replaced classes, in the provided
+     * Replaces all occurrences of previously replaced classes, in the provided
      * directory. This to ensure that each package has its parents package
      * classes also replaced in its own files.
      */

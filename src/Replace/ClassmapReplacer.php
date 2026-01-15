@@ -27,7 +27,7 @@ class ClassmapReplacer extends BaseReplacer
             "
 			/													# Start the pattern
 						namespace\s+[a-zA-Z0-9_\x7f-\xff\\\\]+[;{\s\n]{1}.*?(?=namespace|$)
-																# Look for a preceeding namespace declaration, up until
+																# Look for a preceding namespace declaration, up until
 																# a potential second namespace declaration
 						|										# if found, match that much before repeating the search
 																# on the remainder of the string
@@ -40,7 +40,7 @@ class ClassmapReplacer extends BaseReplacer
 			/sx", //                                            # dot matches newline, ignore whitespace in regex.
             function ($matches) {
 
-                // If we're inside a namespace other than the global namesspace, just return.
+                // If we're inside a namespace other than the global namespace, just return.
                 if (preg_match('/^namespace\s+[a-zA-Z0-9_\x7f-\xff\\\\]+[;{\s\n]{1}.*/', $matches[0])) {
                     return $matches[0] ;
                 }
