@@ -4,7 +4,7 @@
          colors="true"
          processIsolation="false"
          stopOnFailure="false"
-         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.2/phpunit.xsd"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          cacheDirectory=".phpunit.cache"
          backupStaticProperties="false"
@@ -14,4 +14,15 @@
             <directory>./tests/</directory>
         </testsuite>
     </testsuites>
+    <source>
+        <include>
+            <directory>./src</directory>
+        </include>
+        <exclude>
+            <directory>./vendor</directory>
+        </exclude>
+    </source>
+    <php>
+        <ini name="error_reporting" value="-1"/>
+    </php>
 </phpunit>

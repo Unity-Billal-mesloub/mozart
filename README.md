@@ -1,29 +1,62 @@
 # Mozart [![Latest Stable Version](https://poser.pugx.org/coenjacobs/mozart/v/stable.svg)](https://packagist.org/packages/coenjacobs/mozart) [![License](https://poser.pugx.org/coenjacobs/mozart/license.svg)](https://packagist.org/packages/coenjacobs/mozart) [![Total Downloads](https://poser.pugx.org/coenjacobs/mozart/downloads)](//packagist.org/packages/coenjacobs/mozart) [![Docker Image Pulls](https://img.shields.io/docker/pulls/coenjacobs/mozart.svg)](https://hub.docker.com/r/coenjacobs/mozart)
 Composes all dependencies as a package inside a WordPress plugin. Load packages through Composer and have them wrapped inside your own namespace. Gone are the days when plugins could load conflicting versions of the same package, resulting in hard to reproduce bugs.
 
-This package requires PHP 8.0 or higher in order to run the tool. You can use the resulting files as a bundle, requiring any PHP version you like, even PHP 5.2.
-
-**Warning:** This package is very experimental and breaking changes are very likely until version 1.0.0 is tagged. Use with caution, always wear a helmet when using this in production environments.
+This package requires PHP 8.1 or higher in order to run the tool. You can use the resulting files as a bundle, requiring any PHP version you like, even PHP 5.2.
 
 ## Installation
 Mozart brings its own dependencies to the table and that potentially introduces its own problems (yes, I realise how meta that is, for a package like this). That's why installing Mozart in isolation, either through the Docker container, the available PHAR file or installing Mozart as a global dependency with Composer is prefered. In all cases, the [configuration](#configuration) still needs to be placed in the `composer.json` file of the project iself.
 
 ### Docker
-Pull the Docker image from the registry:
 
+Mozart provides Docker images for multiple architectures (linux/amd64, linux/arm64, and linux/arm/v7), making it compatible with Intel/AMD systems, Apple Silicon Macs, ARM-based servers, and Raspberry Pi devices (including Raspberry Pi 3 and earlier).
+
+#### Image Registries
+
+Mozart images are available from two registries:
+
+- **Docker Hub**: `coenjacobs/mozart`
+- **GitHub Container Registry**: `ghcr.io/coenjacobs/mozart`
+
+#### Tag Strategy
+
+- **`latest`**: Points to the highest stable version (e.g., `1.0.0`). This is the recommended tag for production use.
+- **`dev`**: Points to the latest commit on the `master` branch. Use this for testing bleeding-edge features.
+- **Version tags**: Specific versions like `1.0.0`, `1.0.0-beta.1`, etc. Use these for reproducible builds.
+- **Version aliases**: Shortcuts like `1` (latest 1.x.x) and `1.0` (latest 1.0.x) are available for convenience.
+
+#### Pulling Images
+
+**From Docker Hub:**
 ```
 docker pull coenjacobs/mozart
 ```
 
-Then you can start the container and run the `mozart compose` command in the container. In a single command:
+**From GitHub Container Registry:**
+```
+docker pull ghcr.io/coenjacobs/mozart
+```
+
+**Pull a specific version:**
+```
+docker pull coenjacobs/mozart:1.0.0
+```
+
+**Pull development build:**
+```
+docker pull coenjacobs/mozart:dev
+```
+
+#### Running Mozart
+
+Start the container and run the `mozart compose` command in a single command:
 
 ```
 docker run --rm -it -v ${PWD}:/project/ coenjacobs/mozart /mozart/bin/mozart compose
 ```
 
-Above command automatically adds the current working directory as a volume into the designated directory for the project: `/project/`. In the Docker container, Mozart is installed in the `/mozart/` directory. Using the above command will run Mozart on the current working directory.
+This command automatically adds the current working directory as a volume into the designated directory for the project: `/project/`. In the Docker container, Mozart is installed in the `/mozart/` directory. Using the above command will run Mozart on the current working directory.
 
-Please note that the Docker image for Mozart is only available starting from the `latest` build of version 0.7.0. The `latest` tag is always the latest build of the `master` branch and not a stable version. You can see [all available tags on Docker Hub](https://hub.docker.com/r/coenjacobs/mozart/tags).
+You can see [all available tags on Docker Hub](https://hub.docker.com/r/coenjacobs/mozart/tags) or [on GitHub Container Registry](https://github.com/coenjacobs/mozart/pkgs/container/mozart).
 
 ### PHAR (via Phive)
 Mozart can be installed via [Phive](https://github.com/phar-io/phive):

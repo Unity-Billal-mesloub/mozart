@@ -100,7 +100,9 @@ class Replacer
                            . str_replace('\\', DIRECTORY_SEPARATOR, $autoloader->getNamespace());
             $this->replaceInDirectory($autoloader, $sourcePath);
         } elseif ($autoloader instanceof Classmap) {
-            $sourcePath = $this->config->getWorkingDir() . $this->config->getClassmapDirectory() . $package->getName();
+            $sourcePath = $this->config->getWorkingDir()
+                           . $this->config->getClassmapDirectory()
+                           . $package->getDirectoryName();
             $files = $this->files->getFilesFromPath($sourcePath);
 
             foreach ($files as $foundFile) {
@@ -204,7 +206,7 @@ class Replacer
                 }
 
                 $directory = $this->config->getWorkingDir() .
-                $this->config->getClassmapDirectory() . $parent->getName();
+                $this->config->getClassmapDirectory() . $parent->getDirectoryName();
 
                 if ($autoloader instanceof NamespaceAutoloader) {
                     $this->replaceInDirectory($autoloader, $directory);

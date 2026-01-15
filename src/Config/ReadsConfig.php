@@ -8,8 +8,19 @@ use stdClass;
 
 trait ReadsConfig
 {
+    /**
+     * Load configuration from a file.
+     *
+     * @param string $filePath Path to the configuration file
+     * @return self
+     * @throws Exception If the file cannot be read
+     */
     public function loadFromFile(string $filePath): self
     {
+        if (! file_exists($filePath) || ! is_readable($filePath)) {
+            throw new Exception('Could not read config from provided file.');
+        }
+
         $fileContents = file_get_contents($filePath);
 
         if (! $fileContents) {
@@ -55,6 +66,10 @@ trait ReadsConfig
     public function loadFromString(string $config): self
     {
         $config = json_decode($config);
+
+        if ($config === null) {
+            throw new Exception('Could not read config from provided array.');
+        }
 
         $mapper = new JsonMapper();
         $mapper->bEnforceMapType = false;

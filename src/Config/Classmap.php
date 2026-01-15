@@ -50,7 +50,7 @@ class Classmap extends AbstractAutoloader
 
         foreach ($this->files as $file) {
             $sourcePath = $fileHandler->getConfig()->getWorkingDir() . 'vendor'
-                            . DIRECTORY_SEPARATOR . $this->getPackage()->getName();
+                            . DIRECTORY_SEPARATOR . $this->getPackage()->getDirectoryName();
 
             $files = $fileHandler->getFile($sourcePath, $file);
 
@@ -62,7 +62,8 @@ class Classmap extends AbstractAutoloader
 
         foreach ($this->paths as $path) {
             $sourcePath = $fileHandler->getConfig()->getWorkingDir() . 'vendor'
-                            . DIRECTORY_SEPARATOR . $this->getPackage()->getName() . DIRECTORY_SEPARATOR . $path;
+                            . DIRECTORY_SEPARATOR . $this->getPackage()->getDirectoryName()
+                            . DIRECTORY_SEPARATOR . $path;
 
             $files = $fileHandler->getFilesFromPath($sourcePath);
             foreach ($files as $foundFile) {
@@ -81,18 +82,20 @@ class Classmap extends AbstractAutoloader
     {
         $suffix = '';
         foreach ($this->paths as $path) {
-            if (! empty(strstr($file->getPathname(), $this->getPackage()->getName() . DIRECTORY_SEPARATOR . $path))) {
+            $directoryName = $this->getPackage()->getDirectoryName();
+            if (str_contains($file->getPathname(), $directoryName . DIRECTORY_SEPARATOR . $path)) {
                 $suffix = $path;
                 break;
             }
         }
 
-        $namespacePath = $this->getPackage()->getName();
+        $namespacePath = $this->getPackage()->getDirectoryName();
         $replaceWith = $this->fileHandler->getConfig()->getClassmapDirectory() . $namespacePath . DIRECTORY_SEPARATOR;
 
         $targetFile = str_replace($this->fileHandler->getConfig()->getWorkingDir(), $replaceWith, $file->getPathname());
 
-        $packageVendorPath = DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . $this->getPackage()->getName()
+        $directoryName = $this->getPackage()->getDirectoryName();
+        $packageVendorPath = DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . $directoryName
                                 . DIRECTORY_SEPARATOR;
 
         if (! empty($suffix)) {

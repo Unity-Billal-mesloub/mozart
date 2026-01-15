@@ -33,7 +33,7 @@ class PackageFinder
          * This case prevents issues where the requirements array can contain
          * non-package like lines, for example: php or extensions.
          */
-        if (!strstr($slug, '/')) {
+        if (!str_contains($slug, '/')) {
             return null;
         }
 
