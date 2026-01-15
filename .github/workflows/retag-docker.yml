@@ -1,0 +1,208 @@
+name: Retag Docker Images for Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to rebuild and retag (e.g., 1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    name: Rebuild and retag Docker images
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag }}
+
+      - name: Get release information
+        id: release_info
+        run: |
+          RELEASE_TAG="${{ inputs.release_tag }}"
+
+          # Get release information from GitHub API
+          RELEASE_DATA=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${RELEASE_TAG}" || echo "")
+
+          if [ -z "$RELEASE_DATA" ] || [ "$RELEASE_DATA" = "null" ]; then
+            echo "Warning: Release not found for tag ${RELEASE_TAG}, using current date"
+            BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          else
+            BUILD_DATE=$(echo "$RELEASE_DATA" | jq -r '.published_at // .created_at // ""')
+            if [ -z "$BUILD_DATE" ] || [ "$BUILD_DATE" = "null" ]; then
+              BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+            fi
+          fi
+
+          echo "build_date=${BUILD_DATE}" >> $GITHUB_OUTPUT
+          echo "Release tag: ${RELEASE_TAG}"
+          echo "Build date: ${BUILD_DATE}"
+
+      - name: Validate semantic version
+        run: |
+          VERSION="${{ inputs.release_tag }}"
+          # Remove 'v' prefix if present for validation
+          VERSION_NO_V="${VERSION#v}"
+          # Validate semver format (allows pre-release and build metadata)
+          if ! [[ "$VERSION_NO_V" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$ ]]; then
+            echo "Error: Tag '$VERSION' does not follow semantic versioning format (e.g., 1.0.0, 1.0.0-beta.1)"
+            exit 1
+          fi
+          echo "✓ Valid semantic version: $VERSION"
+
+      - name: Prepare
+        id: prep
+        run: |
+          DOCKER_IMAGE=coenjacobs/mozart
+          GHCR_IMAGE=ghcr.io/${{ github.repository_owner }}/mozart
+          VERSION="${{ inputs.release_tag }}"
+
+          # Remove 'v' prefix if present
+          VERSION_NO_V="${VERSION#v}"
+
+          # Detect if this is a pre-release (contains -alpha, -beta, -rc, etc.)
+          if [[ "$VERSION_NO_V" =~ -(alpha|beta|rc|pre) ]]; then
+            IS_PRERELEASE=true
+            echo "Pre-release detected: $VERSION"
+          else
+            IS_PRERELEASE=false
+            echo "Stable release detected: $VERSION"
+          fi
+
+          # Build base tags (always include version tag)
+          TAGS="${DOCKER_IMAGE}:${VERSION},${GHCR_IMAGE}:${VERSION}"
+
+          # For stable releases, check if we should update 'latest' and generate aliases
+          if [ "$IS_PRERELEASE" = "false" ]; then
+            # Query GitHub API to find highest stable version
+            echo "Querying GitHub releases to find highest stable version..."
+            HIGHEST_STABLE=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/${{ github.repository }}/releases" | \
+              jq -r '.[] | select(.prerelease == false) | .tag_name' | \
+              sed 's/^v//' | \
+              sort -V | \
+              tail -n1)
+
+            if [ -z "$HIGHEST_STABLE" ]; then
+              HIGHEST_STABLE="0.0.0"
+            fi
+
+            echo "Current highest stable version: $HIGHEST_STABLE"
+            echo "New version: $VERSION_NO_V"
+
+            # Compare versions using sort -V
+            HIGHER_VERSION=$(printf '%s\n' "$VERSION_NO_V" "$HIGHEST_STABLE" | sort -V | tail -n1)
+
+            if [ "$HIGHER_VERSION" = "$VERSION_NO_V" ] && [ "$VERSION_NO_V" != "$HIGHEST_STABLE" ]; then
+              echo "New version is higher, will tag as 'latest'"
+              TAGS="${TAGS},${DOCKER_IMAGE}:latest,${GHCR_IMAGE}:latest"
+              UPDATE_LATEST=true
+            else
+              echo "New version is not higher than current latest, skipping 'latest' tag"
+              UPDATE_LATEST=false
+            fi
+
+            # Generate tag aliases (major and minor version shortcuts)
+            # Parse version: e.g., 1.2.3 -> major=1, minor=2, patch=3
+            MAJOR=$(echo "$VERSION_NO_V" | cut -d. -f1)
+            MINOR=$(echo "$VERSION_NO_V" | cut -d. -f2)
+
+            # Only create aliases if this is the new highest version
+            if [ "$UPDATE_LATEST" = "true" ]; then
+              # Check if this is the latest in its major version
+              LATEST_IN_MAJOR=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                "https://api.github.com/repos/${{ github.repository }}/releases" | \
+                jq -r ".[] | select(.prerelease == false) | .tag_name" | \
+                sed 's/^v//' | \
+                grep "^${MAJOR}\." | \
+                sort -V | \
+                tail -n1)
+
+              if [ "$VERSION_NO_V" = "$LATEST_IN_MAJOR" ]; then
+                echo "This is the latest in major version $MAJOR, creating aliases"
+                TAGS="${TAGS},${DOCKER_IMAGE}:${MAJOR},${GHCR_IMAGE}:${MAJOR}"
+
+                # Check if this is the latest in its minor version
+                LATEST_IN_MINOR=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                  "https://api.github.com/repos/${{ github.repository }}/releases" | \
+                  jq -r ".[] | select(.prerelease == false) | .tag_name" | \
+                  sed 's/^v//' | \
+                  grep "^${MAJOR}\.${MINOR}\." | \
+                  sort -V | \
+                  tail -n1)
+
+                if [ "$VERSION_NO_V" = "$LATEST_IN_MINOR" ]; then
+                  echo "This is the latest in minor version ${MAJOR}.${MINOR}, creating minor alias"
+                  TAGS="${TAGS},${DOCKER_IMAGE}:${MAJOR}.${MINOR},${GHCR_IMAGE}:${MAJOR}.${MINOR}"
+                fi
+              fi
+            fi
+          fi
+
+          echo "Final tags: $TAGS"
+          echo "tags=${TAGS}" >> $GITHUB_OUTPUT
+          echo "is_prerelease=${IS_PRERELEASE}" >> $GITHUB_OUTPUT
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v5
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          context: .
+          file: ./Dockerfile
+          target: application
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          push: true
+          tags: ${{ steps.prep.outputs.tags }}
+          provenance: false
+          sbom: false
+          build-args: |
+            VERSION=${{ inputs.release_tag }}
+            BUILD_DATE=${{ steps.release_info.outputs.build_date }}
+            VCS_REF=${{ github.sha }}
+            SOURCE_URL=${{ github.event.repository.html_url }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}
+
+      - name: Summary
+        run: |
+          echo "## Docker Images Rebuilt and Tagged" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Release Tag:** \`${{ inputs.release_tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tags Created:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.prep.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Digest:** \`${{ steps.docker_build.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✓ Docker images have been rebuilt and tagged successfully!" >> $GITHUB_STEP_SUMMARY
