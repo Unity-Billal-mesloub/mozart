@@ -84,7 +84,11 @@ jobs:
 
           # For stable releases, check if we should update 'latest' and generate aliases
           if [ "$IS_PRERELEASE" = "false" ]; then
-            # Query GitHub API to find highest stable version
+            # Parse version: e.g., 1.2.3 -> major=1, minor=2, patch=3
+            MAJOR=$(echo "$VERSION_NO_V" | cut -d. -f1)
+            MINOR=$(echo "$VERSION_NO_V" | cut -d. -f2)
+
+            # Check if this should be tagged as 'latest' (highest overall version)
             echo "Querying GitHub releases to find highest stable version..."
             HIGHEST_STABLE=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               "https://api.github.com/repos/${{ github.repository }}/releases" | \
@@ -103,48 +107,43 @@ jobs:
             # Compare versions using sort -V
             HIGHER_VERSION=$(printf '%s\n' "$VERSION_NO_V" "$HIGHEST_STABLE" | sort -V | tail -n1)
 
-            if [ "$HIGHER_VERSION" = "$VERSION_NO_V" ] && [ "$VERSION_NO_V" != "$HIGHEST_STABLE" ]; then
-              echo "New version is higher, will tag as 'latest'"
+            # Tag as 'latest' if this version is >= highest stable (allows equal for retagging)
+            if [ "$HIGHER_VERSION" = "$VERSION_NO_V" ]; then
+              echo "New version is highest or equal to highest, will tag as 'latest'"
               TAGS="${TAGS},${DOCKER_IMAGE}:latest,${GHCR_IMAGE}:latest"
-              UPDATE_LATEST=true
             else
-              echo "New version is not higher than current latest, skipping 'latest' tag"
-              UPDATE_LATEST=false
+              echo "New version is not highest, skipping 'latest' tag"
             fi
 
-            # Generate tag aliases (major and minor version shortcuts)
-            # Parse version: e.g., 1.2.3 -> major=1, minor=2, patch=3
-            MAJOR=$(echo "$VERSION_NO_V" | cut -d. -f1)
-            MINOR=$(echo "$VERSION_NO_V" | cut -d. -f2)
+            # Check major version tag (independent of 'latest' tag)
+            # This should update whenever the version is the latest in its major version range
+            echo "Checking if this is the latest in major version $MAJOR..."
+            LATEST_IN_MAJOR=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/${{ github.repository }}/releases" | \
+              jq -r ".[] | select(.prerelease == false) | .tag_name" | \
+              sed 's/^v//' | \
+              grep "^${MAJOR}\." | \
+              sort -V | \
+              tail -n1)
 
-            # Only create aliases if this is the new highest version
-            if [ "$UPDATE_LATEST" = "true" ]; then
-              # Check if this is the latest in its major version
-              LATEST_IN_MAJOR=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            if [ "$VERSION_NO_V" = "$LATEST_IN_MAJOR" ]; then
+              echo "This is the latest in major version $MAJOR, creating major version tag"
+              TAGS="${TAGS},${DOCKER_IMAGE}:${MAJOR},${GHCR_IMAGE}:${MAJOR}"
+
+              # Check minor version tag (independent of 'latest' tag, but only if major matches)
+              # This should update whenever the version is the latest in its minor version range
+              echo "Checking if this is the latest in minor version ${MAJOR}.${MINOR}..."
+              LATEST_IN_MINOR=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                 "https://api.github.com/repos/${{ github.repository }}/releases" | \
                 jq -r ".[] | select(.prerelease == false) | .tag_name" | \
                 sed 's/^v//' | \
-                grep "^${MAJOR}\." | \
+                grep "^${MAJOR}\.${MINOR}\." | \
                 sort -V | \
                 tail -n1)
 
-              if [ "$VERSION_NO_V" = "$LATEST_IN_MAJOR" ]; then
-                echo "This is the latest in major version $MAJOR, creating aliases"
-                TAGS="${TAGS},${DOCKER_IMAGE}:${MAJOR},${GHCR_IMAGE}:${MAJOR}"
-
-                # Check if this is the latest in its minor version
-                LATEST_IN_MINOR=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                  "https://api.github.com/repos/${{ github.repository }}/releases" | \
-                  jq -r ".[] | select(.prerelease == false) | .tag_name" | \
-                  sed 's/^v//' | \
-                  grep "^${MAJOR}\.${MINOR}\." | \
-                  sort -V | \
-                  tail -n1)
-
-                if [ "$VERSION_NO_V" = "$LATEST_IN_MINOR" ]; then
-                  echo "This is the latest in minor version ${MAJOR}.${MINOR}, creating minor alias"
-                  TAGS="${TAGS},${DOCKER_IMAGE}:${MAJOR}.${MINOR},${GHCR_IMAGE}:${MAJOR}.${MINOR}"
-                fi
+              if [ "$VERSION_NO_V" = "$LATEST_IN_MINOR" ]; then
+                echo "This is the latest in minor version ${MAJOR}.${MINOR}, creating minor version tag"
+                TAGS="${TAGS},${DOCKER_IMAGE}:${MAJOR}.${MINOR},${GHCR_IMAGE}:${MAJOR}.${MINOR}"
               fi
             fi
           fi
