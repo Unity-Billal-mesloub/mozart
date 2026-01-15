@@ -1,0 +1,69 @@
+name: Retag Docker Images for Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to rebuild and retag (e.g., 1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  get-release-info:
+    runs-on: ubuntu-latest
+    outputs:
+      build_date: ${{ steps.release_info.outputs.build_date }}
+    steps:
+      - name: Get release information
+        id: release_info
+        run: |
+          RELEASE_TAG="${{ inputs.release_tag }}"
+
+          # Get release information from GitHub API
+          RELEASE_DATA=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${RELEASE_TAG}" || echo "")
+
+          if [ -z "$RELEASE_DATA" ] || [ "$RELEASE_DATA" = "null" ]; then
+            echo "Warning: Release not found for tag ${RELEASE_TAG}, using current date"
+            BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          else
+            BUILD_DATE=$(echo "$RELEASE_DATA" | jq -r '.published_at // .created_at // ""')
+            if [ -z "$BUILD_DATE" ] || [ "$BUILD_DATE" = "null" ]; then
+              BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+            fi
+          fi
+
+          echo "build_date=${BUILD_DATE}" >> $GITHUB_OUTPUT
+          echo "Release tag: ${RELEASE_TAG}"
+          echo "Build date: ${BUILD_DATE}"
+
+  docker:
+    needs: get-release-info
+    uses: ./.github/workflows/docker-build-and-tag.yml
+    with:
+      version: ${{ inputs.release_tag }}
+      build_date: ${{ needs.get-release-info.outputs.build_date }}
+      vcs_ref: ${{ github.sha }}
+      source_url: ${{ github.event.repository.html_url }}
+      ref: ${{ inputs.release_tag }}
+    secrets: inherit
+
+  summary:
+    runs-on: ubuntu-latest
+    needs: [get-release-info, docker]
+    if: success()
+    steps:
+      - name: Summary
+        run: |
+          echo "## Docker Images Rebuilt and Tagged" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Release Tag:** \`${{ inputs.release_tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tags Created:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "${{ needs.docker.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Digest:** \`${{ needs.docker.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✓ Docker images have been rebuilt and tagged successfully!" >> $GITHUB_STEP_SUMMARY
